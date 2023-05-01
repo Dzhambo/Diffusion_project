@@ -1,1 +1,9 @@
 torch
+torchvision
+seaborn
+imageio
+einops
+opencv-python
+matplotlib
+numpy
+tqdm
