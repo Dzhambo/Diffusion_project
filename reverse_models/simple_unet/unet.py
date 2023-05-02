@@ -1,5 +1,5 @@
 import torch
-from reverse_models.unet_layers import Block, TimePositionEmbeddings
+from reverse_models.simple_unet.unet_layers import Block, TimePositionEmbeddings
 
 
 class CustomUnet(torch.nn.Module):

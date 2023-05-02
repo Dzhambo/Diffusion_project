@@ -1,5 +1,4 @@
 import torch
-from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, ToTensor, Lambda
 
 import matplotlib.pyplot as plt
@@ -45,7 +44,6 @@ def transform_data_for_show(ds_fn, store_path='../datasets'):
         ]
     )
     dataset = ds_fn("./datasets", download=True, train=True, transform=transform)
-
     return dataset
 
 def show_forward(ddpm, loader, device):
@@ -54,7 +52,7 @@ def show_forward(ddpm, loader, device):
 
         show_images(imgs, "Original images")
 
-        for percent in [0.25, 0.5, 0.75, 1]:
+        for percent in [0.33, 0.66, 1]:
             show_images(
                 ddpm(imgs.to(device),
                      [int(percent * ddpm.n_steps) - 1 for _ in range(len(imgs))]),
@@ -78,7 +76,10 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
             eps = torch.randn_like(x).to(device)
 
             noise = ddpm(x, t, eps)
-            noise_est = ddpm.reverse(noise, t)
+            if x.size()[1] == 1:
+                noise_est = ddpm.reverse(noise, t.reshape(batch_size, -1))
+            else:
+                noise_est = ddpm.reverse(noise, t)
 
             loss = loss_function(noise, noise_est)
 
