@@ -33,7 +33,7 @@ def show_images(images, cmap='gray', title=""):
 
 def show_first_batch(loader):
     for batch in loader:
-        show_images(batch[0], "Images in the first batch")
+        show_images(batch[0], title="Images in the first batch")
         break
 
 def transform_data_for_show(ds_fn, train=True, store_path='../datasets'):
@@ -50,17 +50,17 @@ def show_forward(ddpm, loader, device, percentiles = (0.33, 0.66, 1)):
     for batch in loader:
         imgs = batch[0]
 
-        show_images(imgs, "Original images")
+        show_images(imgs, title="Original images")
 
         for percent in percentiles:
             show_images(
                 ddpm(imgs.to(device),
                      [int(percent * ddpm.n_steps) - 1 for _ in range(len(imgs))]),
-                f"DDPM Noisy images {int(percent * 100)}%"
+                title=f"DDPM Noisy images {int(percent * 100)}%"
             )
         break
 
-def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset_epoch=100, store_path='ddpm.pt'):
+def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset_epoch=10, store_path='ddpm.pt'):
     loss_function = torch.nn.MSELoss()
     best_loss = float('inf')
     epoch_loss_history = []
@@ -88,6 +88,10 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
             optimizer.step()
 
             epoch_loss += loss.item() * batch_size / len(dataloader.dataset)
+        
+        if display:
+            show_images(generate_new_images(ddpm, device=device), title=f"Images generated at epoch {epoch + 1}")
+
         
         epoch_loss_history.append(epoch_loss)
         if display and epoch % upset_epoch == 0:
@@ -151,11 +155,11 @@ def generate_new_images(ddpm, n_samples=16, device=None, frames_per_gif=100, gif
                 frame = frame.cpu().numpy().astype(np.uint8)
 
                 frames.append(frame)
-
-    with imageio.get_writer(gif_name, mode="I") as writer:
-        for idx, frame in enumerate(frames):
-            writer.append_data(frame)
-            if idx == len(frames) - 1:
-                for _ in range(frames_per_gif // 3):
-                    writer.append_data(frames[-1])
+    if c == 3:
+        with imageio.get_writer(gif_name, mode="I") as writer:
+            for idx, frame in enumerate(frames):
+                writer.append_data(frame)
+                if idx == len(frames) - 1:
+                    for _ in range(frames_per_gif // 3):
+                        writer.append_data(frames[-1])
     return x
