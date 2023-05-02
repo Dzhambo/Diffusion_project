@@ -4,7 +4,7 @@ from torchvision.transforms import Compose, ToTensor, Lambda
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 import einops
 import imageio
 import cv2
