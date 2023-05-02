@@ -100,7 +100,7 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
 
             plt.show()
         
-        log_string = f"Loss at epoch {epoch + 1}: {epoch_loss:.3f}"
+        log_string = f"Loss at epoch {epoch + 1}: {epoch_loss:.5f}"
         
 
         if best_loss > epoch_loss:
@@ -124,7 +124,7 @@ def generate_new_images(ddpm, n_samples=16, device=None, frames_per_gif=100, gif
 
         for idx, t in enumerate(list(range(ddpm.n_steps))[::-1]):
             time_tensor = (torch.ones(n_samples, 1) * t).to(device).long()
-            eta_theta = ddpm.reverse(x, time_tensor)
+            eta_theta = ddpm.reverse(x, time_tensor.squeeze(1))
 
             alpha_t = ddpm.alphas[t]
             alpha_t_bar = ddpm.alpha_bars[t]
