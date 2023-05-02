@@ -37,7 +37,7 @@ def show_first_batch(loader):
         show_images(batch[0], "Images in the first batch")
         break
 
-def transform_data_for_show(ds_fn, batch_size, store_path='../datasets'):
+def transform_data_for_show(ds_fn, store_path='../datasets'):
     transform = Compose(
         [
         ToTensor(),
@@ -45,9 +45,8 @@ def transform_data_for_show(ds_fn, batch_size, store_path='../datasets'):
         ]
     )
     dataset = ds_fn("./datasets", download=True, train=True, transform=transform)
-    loader = DataLoader(dataset, batch_size, shuffle=True)
 
-    return loader
+    return dataset
 
 def show_forward(ddpm, loader, device):
     for batch in loader:
