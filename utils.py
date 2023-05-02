@@ -8,6 +8,7 @@ from tqdm import tqdm
 import einops
 import imageio
 import cv2
+from IPython.display import clear_output
 
 
 def show_images(images, title=""):
@@ -88,7 +89,7 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
 
             epoch_loss += loss.item() * batch_size / len(dataloader.dataset)
         
-        epoch_loss_history.aapend(epoch_loss)
+        epoch_loss_history.append(epoch_loss)
         if display and epoch % upset_epoch == 0:
             clear_output(True)
             plt.figure(figsize=(16, 9))
