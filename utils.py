@@ -114,7 +114,6 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
 
         print(log_string)
 
-
 def generate_new_images(ddpm, n_samples=16, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
     """Given a DDPM model, a number of samples to be generated and a device, returns some newly generated samples"""
     frame_idxs = np.linspace(0, ddpm.n_steps, frames_per_gif).astype(np.uint)
@@ -144,6 +143,8 @@ def generate_new_images(ddpm, n_samples=16, device=None, frames_per_gif=100, gif
                 beta_t = ddpm.betas[t]
                 sigma_t = beta_t.sqrt()
                 x = x + sigma_t * z
+            
+            
 
             if idx in frame_idxs or t == 0:
                 normalized = x.clone()
@@ -162,4 +163,10 @@ def generate_new_images(ddpm, n_samples=16, device=None, frames_per_gif=100, gif
                 if idx == len(frames) - 1:
                     for _ in range(frames_per_gif // 3):
                         writer.append_data(frames[-1])
+
     return x
+
+def calculate_rate(x):
+    b, c, h, w = x.size()
+    log_softmax = torch.nn.LogSoftmax(dim=0)
+    return - torch.sum(log_softmax(x)) / (b*c*h*w * np.log(2))
