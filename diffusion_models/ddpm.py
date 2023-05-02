@@ -21,5 +21,5 @@ class CustomDiffusionModel(torch.nn.Module):
         noise = a_bar.sqrt().reshape(b, 1, 1, 1) * x + (1 - a_bar).sqrt().reshape(b, 1, 1, 1) * eps
         return noise
 
-    def reverse(self, x, t):
+    def backward(self, x, t):
         return self.network(x, t)
