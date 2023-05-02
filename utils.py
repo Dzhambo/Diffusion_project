@@ -81,7 +81,7 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
             else:
                 noise_est = ddpm.backward(noise, t)
 
-            loss = loss_function(noise, noise_est)
+            loss = loss_function(eps, noise_est)
 
             optimizer.zero_grad()
             loss.backward()
