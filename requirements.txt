@@ -9,3 +9,4 @@ numpy
 tqdm
 ipykernel
 ipywidgets
+scipy
