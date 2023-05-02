@@ -43,7 +43,7 @@ def transform_data_for_show(ds_fn, train=True, store_path='../datasets'):
         Lambda(lambda x: (x - 0.5) * 2),
         ]
     )
-    dataset = ds_fn("./datasets", download=True, train=train, transform=transform)
+    dataset = ds_fn(store_path, download=True, train=train, transform=transform)
     return dataset
 
 def show_forward(ddpm, loader, device, percentiles = (0.33, 0.66, 1)):
@@ -165,8 +165,3 @@ def generate_new_images(ddpm, n_samples=16, device=None, frames_per_gif=100, gif
                         writer.append_data(frames[-1])
 
     return x
-
-def calculate_rate(x):
-    b, c, h, w = x.size()
-    log_softmax = torch.nn.LogSoftmax(dim=0)
-    return - torch.sum(log_softmax(x)) / (b*c*h*w * np.log(2))
