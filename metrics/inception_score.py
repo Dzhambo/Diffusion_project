@@ -14,13 +14,7 @@ def get_pred(x, resize, up, inception_model):
     return F.softmax(x).data.cpu().numpy()
 
 
-def inception_score(imgs, device, batch_size=32, resize=False, splits=1):
-    """Computes the inception score of the generated images imgs
-    imgs -- Torch dataset of (3xHxW) numpy images normalized in the range [-1, 1]
-    cuda -- whether or not to run on GPU
-    batch_size -- batch size for feeding into Inception v3
-    splits -- number of splits
-    """
+def inception_score(imgs, device, batch_size=32, resize=False, splits=10):
     N = len(imgs)
     
     dataloader = torch.utils.data.DataLoader(imgs, batch_size=batch_size)
