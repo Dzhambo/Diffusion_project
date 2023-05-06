@@ -1,5 +1,6 @@
 import torch
 from torchvision.transforms import Compose, ToTensor, Lambda
+from torch.utils.data import DataLoader
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -123,12 +124,14 @@ def calculate_metrics(generated_image, real_image,  device):
     fid_score_value = fid_score(generated_image, real_image)
     return inc_score, rate_score_value.cpu().detach(), fid_score_value
 
-def generate_new_images(ddpm, loader=None, n_samples=16, upset=100, record_gif=True, show_metrics_pes_step=False, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
+def generate_new_images(ddpm, dataset=None, n_samples=16, upset=100, record_gif=True, show_metrics_pes_step=False, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
     frame_idxs = np.linspace(0, ddpm.n_steps, frames_per_gif).astype(np.uint)
     frames = []
     rate_score_history = []
     inception_score_history = []
     fid_score_history = []
+
+    loader = DataLoader(dataset, batch_size=n_samples, num_workers=0, shuffle=True)
     
     with torch.no_grad():
         if device is None:
