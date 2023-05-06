@@ -8,8 +8,8 @@ def fid_score(images1, images2, device):
     inception_model = inception_v3(pretrained=True, transform_input=False).to(device)
     inception_model.eval()
 
-    embs1 = inception_model.predict(images1)
-    embs2 = inception_model.predict(images2)
+    embs1 = inception_model(images1)
+    embs2 = inception_model(images2)
 
     mu1, sigma1 = embs1.mean(dim=0), torch.cov(embs1)
     mu2, sigma2 = embs2.mean(dim=0), torch.cov(embs2)
