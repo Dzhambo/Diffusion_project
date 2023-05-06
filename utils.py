@@ -123,8 +123,7 @@ def calculate_metrics(generated_image, real_image,  device):
     fid_score_value = fid_score(generated_image, real_image)
     return inc_score, rate_score_value.cpu().detach(), fid_score_value
 
-def generate_new_images(ddpm, loader=None, n_samples=16, show_metrics_pes_step=False, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
-    """Given a DDPM model, a number of samples to be generated and a device, returns some newly generated samples"""
+def generate_new_images(ddpm, loader=None, n_samples=16, upset=100, record_gif=True, show_metrics_pes_step=False, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
     frame_idxs = np.linspace(0, ddpm.n_steps, frames_per_gif).astype(np.uint)
     frames = []
     rate_score_history = []
@@ -165,27 +164,28 @@ def generate_new_images(ddpm, loader=None, n_samples=16, show_metrics_pes_step=F
                 inception_score_history.append(inception_score)
                 fid_score_history.append(fid_score)
                 
-                clear_output(True)
-                plt.figure(figsize=(16, 9))
-                
-                plt.subplot(1, 3, 1)
-                plt.title("Inception score")
-                plt.plot(inception_score_history)
-                plt.grid()
-                
-                plt.subplot(1, 3, 2)
-                plt.title("FID score")
-                plt.plot(fid_score_history)
-                plt.grid()
-                
-                plt.subplot(1, 3, 3)
-                plt.title("bits/dim")
-                plt.plot(rate_score_history)
-                plt.grid()
+                if ddpm.n_steps - idx % upset == 0:
+                    clear_output(True)
+                    plt.figure(figsize=(16, 9))
+                    
+                    plt.subplot(1, 3, 1)
+                    plt.title("Inception score")
+                    plt.plot(inception_score_history)
+                    plt.grid()
+                    
+                    plt.subplot(1, 3, 2)
+                    plt.title("FID score")
+                    plt.plot(fid_score_history)
+                    plt.grid()
+                    
+                    plt.subplot(1, 3, 3)
+                    plt.title("bits/dim")
+                    plt.plot(rate_score_history)
+                    plt.grid()
 
-                plt.show()
+                    plt.show()
                 
-            if idx in frame_idxs or t == 0:
+            if (idx in frame_idxs or t == 0) and record_gif:
                 normalized = x.clone()
                 for i in range(len(normalized)):
                     normalized[i] -= torch.min(normalized[i])
@@ -195,7 +195,7 @@ def generate_new_images(ddpm, loader=None, n_samples=16, show_metrics_pes_step=F
                 frame = frame.cpu().numpy().astype(np.uint8)
 
                 frames.append(frame)
-    if c == 3:
+    if c == 3 and record_gif:
         with imageio.get_writer(gif_name, mode="I") as writer:
             for idx, frame in enumerate(frames):
                 writer.append_data(frame)
