@@ -6,7 +6,6 @@ import numpy as np
 from tqdm.notebook import tqdm
 import einops
 import imageio
-import cv2
 from IPython.display import clear_output
 
 from metrics.rate_score import rate_score
@@ -122,7 +121,7 @@ def calculate_metrics(generated_image, real_image,  device):
     inc_score, _ = inception_score(generated_image, device=device, resize=True, splits=10)
     rate_score_value = rate_score(generated_image)
     fid_score_value = fid_score(generated_image, real_image)
-    return inc_score, rate_score_value, fid_score_value
+    return inc_score, rate_score_value.cpu().detach(), fid_score_value
 
 def generate_new_images(ddpm, loader=None, n_samples=16, show_metrics_pes_step=False, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
     """Given a DDPM model, a number of samples to be generated and a device, returns some newly generated samples"""
