@@ -120,14 +120,22 @@ def training(ddpm, dataloader, n_epochs, optimizer, device, display=False, upset
 
 def calculate_metrics(generated_image, real_image,  device):
     inc_score, _ = inception_score(generated_image, device=device, resize=True, splits=10)
-    rate_score_value = rate_score(generated_image)
     fid_score_value = fid_score(generated_image, real_image)
-    return inc_score, rate_score_value.cpu().detach(), fid_score_value
+    return inc_score,  fid_score_value
 
-def generate_new_images(ddpm, dataset=None, n_samples=16, upset=100, record_gif=True, show_metrics_pes_step=False, device=None, frames_per_gif=100, gif_name="sampling.gif", c=1, h=28, w=28):
+def generate_new_images(ddpm,
+                        dataset=None, 
+                        n_samples=16, 
+                        upset=100, 
+                        record_gif=True, 
+                        show_metrics_pes_step=False, 
+                        device=None, 
+                        frames_per_gif=100, 
+                        gif_name="sampling.gif", 
+                        c=1, h=28, w=28
+                        ):
     frame_idxs = np.linspace(0, ddpm.n_steps, frames_per_gif).astype(np.uint)
     frames = []
-    rate_score_history = []
     inception_score_history = []
     fid_score_history = []
 
@@ -163,7 +171,6 @@ def generate_new_images(ddpm, dataset=None, n_samples=16, upset=100, record_gif=
                 real_image = next(iter(loader))[0].to(device)
                 inception_score, rate_score, fid_score = calculate_metrics(x, real_image, device)
                 
-                rate_score_history.append(rate_score)
                 inception_score_history.append(inception_score)
                 fid_score_history.append(fid_score)
                 
@@ -171,21 +178,16 @@ def generate_new_images(ddpm, dataset=None, n_samples=16, upset=100, record_gif=
                     clear_output(True)
                     plt.figure(figsize=(16, 9))
                     
-                    plt.subplot(1, 3, 1)
+                    plt.subplot(1, 2, 1)
                     plt.title("Inception score")
                     plt.plot(inception_score_history)
                     plt.grid()
                     
-                    plt.subplot(1, 3, 2)
+                    plt.subplot(1, 2, 2)
                     plt.title("FID score")
                     plt.plot(fid_score_history)
                     plt.grid()
                     
-                    plt.subplot(1, 3, 3)
-                    plt.title("bits/dim")
-                    plt.plot(rate_score_history)
-                    plt.grid()
-
                     plt.show()
                 
             if (idx in frame_idxs or t == 0) and record_gif:
