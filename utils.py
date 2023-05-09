@@ -139,7 +139,8 @@ def generate_new_images(ddpm,
     inception_score_history = []
     fid_score_history = []
 
-    loader = DataLoader(dataset, batch_size=n_samples, num_workers=0, shuffle=True)
+    if dataset is not None:
+        loader = DataLoader(dataset, batch_size=n_samples, num_workers=0, shuffle=True)
     
     with torch.no_grad():
         if device is None:
@@ -169,7 +170,7 @@ def generate_new_images(ddpm,
             
             if show_metrics_pes_step:
                 real_image = next(iter(loader))[0].to(device)
-                inception_score, rate_score, fid_score = calculate_metrics(x, real_image, device)
+                inception_score, fid_score = calculate_metrics(x, real_image, device)
                 
                 inception_score_history.append(inception_score)
                 fid_score_history.append(fid_score)
