@@ -8,8 +8,8 @@ from einops import rearrange, reduce, repeat
 from torch import einsum, nn
 from tqdm.auto import tqdm
 
-ModelPrediction = namedtuple("ModelPrediction", ["pred_noise", "pred_x_start"])
 
+ModelPrediction = namedtuple("ModelPrediction", ["pred_noise", "pred_x_start"])
 
 def exists(x):
     return x is not None
@@ -49,10 +49,6 @@ def convert_image_to_fn(img_type, image):
         return image.convert(img_type)
     return image
 
-
-# normalization functions
-
-
 def normalize_to_neg_one_to_one(img):
     return img * 2 - 1
 
@@ -60,8 +56,6 @@ def normalize_to_neg_one_to_one(img):
 def unnormalize_to_zero_to_one(t):
     return (t + 1) * 0.5
 
-
-# classifier free guidance functions
 
 
 def uniform(shape, device):
@@ -75,10 +69,6 @@ def prob_mask_like(shape, prob, device):
         return torch.zeros(shape, device=device, dtype=torch.bool)
     else:
         return torch.zeros(shape, device=device).float().uniform_(0, 1) < prob
-
-
-# small helper modules
-
 
 class Residual(nn.Module):
     def __init__(self, fn):
@@ -101,11 +91,6 @@ def Downsample(dim, dim_out=None):
 
 
 class WeightStandardizedConv2d(nn.Conv2d):
-    """
-    https://arxiv.org/abs/1903.10520
-    weight standardization purportedly works synergistically with group normalization
-    """
-
     def forward(self, x):
         eps = 1e-5 if x.dtype == torch.float32 else 1e-3
 
@@ -124,7 +109,6 @@ class WeightStandardizedConv2d(nn.Conv2d):
             self.groups,
         )
 
-
 class LayerNorm(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -136,7 +120,6 @@ class LayerNorm(nn.Module):
         mean = torch.mean(x, dim=1, keepdim=True)
         return (x - mean) * (var + eps).rsqrt() * self.g
 
-
 class PreNorm(nn.Module):
     def __init__(self, dim, fn):
         super().__init__()
@@ -146,10 +129,6 @@ class PreNorm(nn.Module):
     def forward(self, x):
         x = self.norm(x)
         return self.fn(x)
-
-
-# sinusoidal positional embeds
-
 
 class SinusoidalPosEmb(nn.Module):
     def __init__(self, dim):
@@ -167,10 +146,6 @@ class SinusoidalPosEmb(nn.Module):
 
 
 class RandomOrLearnedSinusoidalPosEmb(nn.Module):
-    """following @crowsonkb 's lead with random (learned optional) sinusoidal pos emb"""
-
-    """ https://github.com/crowsonkb/v-diffusion-jax/blob/master/diffusion/models/danbooru_128.py#L8 """
-
     def __init__(self, dim, is_random=False):
         super().__init__()
         assert (dim % 2) == 0
@@ -183,10 +158,6 @@ class RandomOrLearnedSinusoidalPosEmb(nn.Module):
         fouriered = torch.cat((freqs.sin(), freqs.cos()), dim=-1)
         fouriered = torch.cat((x, fouriered), dim=-1)
         return fouriered
-
-
-# building block modules
-
 
 class Block(nn.Module):
     def __init__(self, dim, dim_out, groups=8):
@@ -205,7 +176,6 @@ class Block(nn.Module):
 
         x = self.act(x)
         return x
-
 
 class ResnetBlock(nn.Module):
     def __init__(
@@ -239,7 +209,6 @@ class ResnetBlock(nn.Module):
         h = self.block2(h)
 
         return h + self.res_conv(x)
-
 
 class LinearAttention(nn.Module):
     def __init__(self, dim, heads=4, dim_head=32):
@@ -297,10 +266,6 @@ class Attention(nn.Module):
         out = rearrange(out, "b h (x y) d -> b (h d) x y", x=h, y=w)
         return self.to_out(out)
 
-
-# model
-
-
 class Unet(nn.Module):
     def __init__(
         self,
@@ -319,11 +284,8 @@ class Unet(nn.Module):
     ):
         super().__init__()
 
-        # classifier free guidance stuff
 
         self.cond_drop_prob = cond_drop_prob
-
-        # determine dimensions
 
         self.channels = channels
         input_channels = channels
@@ -335,8 +297,6 @@ class Unet(nn.Module):
         in_out = list(zip(dims[:-1], dims[1:]))
 
         block_klass = partial(ResnetBlock, groups=resnet_block_groups)
-
-        # time embeddings
 
         time_dim = dim * 4
 
@@ -370,8 +330,6 @@ class Unet(nn.Module):
         self.classes_mlp = nn.Sequential(
             nn.Linear(dim, classes_dim), nn.GELU(), nn.Linear(classes_dim, classes_dim)
         )
-
-        # layers
 
         self.downs = nn.ModuleList([])
         self.ups = nn.ModuleList([])
@@ -460,8 +418,6 @@ class Unet(nn.Module):
 
         cond_drop_prob = default(cond_drop_prob, self.cond_drop_prob)
 
-        # derive condition, with condition dropout for classifier free guidance
-
         classes_emb = self.classes_emb(classes)
 
         if cond_drop_prob > 0:
@@ -473,8 +429,6 @@ class Unet(nn.Module):
             )
 
         c = self.classes_mlp(classes_emb)
-
-        # unet
 
         x = self.init_conv(x)
         r = x.clone()
@@ -513,9 +467,6 @@ class Unet(nn.Module):
         return self.final_conv(x)
 
 
-# gaussian diffusion trainer class
-
-
 def extract(a, t, x_shape):
     b, *_ = t.shape
     out = a.gather(-1, t)
@@ -530,10 +481,6 @@ def linear_beta_schedule(timesteps):
 
 
 def cosine_beta_schedule(timesteps, s=0.008):
-    """
-    cosine schedule
-    as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
-    """
     steps = timesteps + 1
     x = torch.linspace(0, timesteps, steps, dtype=torch.float64)
     alphas_cumprod = torch.cos(((x / timesteps) + s) / (1 + s) * math.pi * 0.5) ** 2
@@ -589,17 +536,13 @@ class GaussianDiffusion(nn.Module):
         self.num_timesteps = int(timesteps)
         self.loss_type = loss_type
 
-        # sampling related parameters
-
         self.sampling_timesteps = default(
             sampling_timesteps, timesteps
-        )  # default num sampling timesteps to number of timesteps at training
+        ) 
 
         assert self.sampling_timesteps <= timesteps
         self.is_ddim_sampling = self.sampling_timesteps < timesteps
         self.ddim_sampling_eta = ddim_sampling_eta
-
-        # helper function to register buffer from float64 to float32
 
         register_buffer = lambda name, val: self.register_buffer(
             name, val.to(torch.float32)
@@ -608,8 +551,6 @@ class GaussianDiffusion(nn.Module):
         register_buffer("betas", betas)
         register_buffer("alphas_cumprod", alphas_cumprod)
         register_buffer("alphas_cumprod_prev", alphas_cumprod_prev)
-
-        # calculations for diffusion q(x_t | x_{t-1}) and others
 
         register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod))
         register_buffer(
@@ -621,17 +562,11 @@ class GaussianDiffusion(nn.Module):
             "sqrt_recipm1_alphas_cumprod", torch.sqrt(1.0 / alphas_cumprod - 1)
         )
 
-        # calculations for posterior q(x_{t-1} | x_t, x_0)
-
         posterior_variance = (
             betas * (1.0 - alphas_cumprod_prev) / (1.0 - alphas_cumprod)
         )
 
-        # above: equal to 1. / (1. / (1. - alpha_cumprod_tm1) + alpha_t / beta_t)
-
         register_buffer("posterior_variance", posterior_variance)
-
-        # below: log calculation clipped because the posterior variance is 0 at the beginning of the diffusion chain
 
         register_buffer(
             "posterior_log_variance_clipped",
@@ -645,8 +580,6 @@ class GaussianDiffusion(nn.Module):
             "posterior_mean_coef2",
             (1.0 - alphas_cumprod_prev) * torch.sqrt(alphas) / (1.0 - alphas_cumprod),
         )
-
-        # loss weight
 
         snr = alphas_cumprod / (1 - alphas_cumprod)
 
@@ -746,7 +679,7 @@ class GaussianDiffusion(nn.Module):
             cond_scale=cond_scale,
             clip_denoised=clip_denoised,
         )
-        noise = torch.randn_like(x) if t > 0 else 0.0  # no noise if t == 0
+        noise = torch.randn_like(x) if t > 0 else 0.0
         pred_img = model_mean + (0.5 * model_log_variance).exp() * noise
         return pred_img, x_start
 
@@ -781,11 +714,11 @@ class GaussianDiffusion(nn.Module):
 
         times = torch.linspace(
             -1, total_timesteps - 1, steps=sampling_timesteps + 1
-        )  # [-1, 0, 1, 2, ..., T-1] when sampling_timesteps == total_timesteps
+        )
         times = list(reversed(times.int().tolist()))
         time_pairs = list(
             zip(times[:-1], times[1:])
-        )  # [(T-1, T-2), (T-2, T-3), ..., (1, 0), (0, -1)]
+        )
 
         img = torch.randn(shape, device=device)
 
@@ -875,11 +808,7 @@ class GaussianDiffusion(nn.Module):
         b, c, h, w = x_start.shape
         noise = default(noise, lambda: torch.randn_like(x_start))
 
-        # noise sample
-
         x = self.q_sample(x_start=x_start, t=t, noise=noise)
-
-        # predict and take gradient step
 
         model_out = self.model(x, t, classes)
 
@@ -912,9 +841,7 @@ class GaussianDiffusion(nn.Module):
             img.device,
             self.image_size,
         )
-        assert (
-            h == img_size and w == img_size
-        ), f"height and width of image must be {img_size}"
+  
         t = torch.randint(0, self.num_timesteps, (b,), device=device).long()
 
         img = normalize_to_neg_one_to_one(img)
