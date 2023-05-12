@@ -85,3 +85,33 @@ def calculate_metrics(generated_image, real_image, device):
     )
     fid_score_value = fid_score(generated_image, real_image)
     return inc_score, fid_score_value
+
+def plot_metrics_iddpm(generated_images, real_images, device, n_timestamps=250, batch_size=100):
+    inception_score_history = []
+    fid_score_history = []
+    real_dataloader = DataLoader(real_images, batch_size=batch_size, num_workers=0, shuffle=True)
+    
+    for timestamp in tqdm(range(n_timestamps)):
+        gen_batch_t = generated_images[:, timestamp, :, :].to(device)
+        real_batch_t = next(iter(real_dataloader))[0].to(device)
+        
+        fid_score_value = fid_score(gen_batch_t, real_batch_t, batch_size=batch_size, device=device)
+        inception_score_value, _ = inception_score(gen_batch_t, device=device, batch_size=batch_size, resize=True)
+        
+        fid_score_history.append(fid_score_value)
+        inception_score_history.append(inception_score_value)
+    
+        clear_output(True)
+        plt.figure(figsize=(16, 9))
+
+        plt.subplot(1, 2, 1)
+        plt.title("Inception score")
+        plt.plot(inception_score_history)
+        plt.grid()
+
+        plt.subplot(1, 2, 2)
+        plt.title("FID score")
+        plt.plot(fid_score_history)
+        plt.grid()
+
+        plt.show()
