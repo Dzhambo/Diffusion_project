@@ -59,9 +59,31 @@ class Trainer:
         
         self.display = display
         self.upset_step = upset_step
+        
+    @torch.no_grad()
+    def calculate_activation_statistics(self, samples):
+        features = self.inception_v3(samples)[0]
+        features = rearrange(features, '... 1 1 -> ...').cpu().numpy()
+
+        mu = np.mean(features, axis = 0)
+        sigma = np.cov(features, rowvar = False)
+        return mu, sigma
+
+    def fid_score(self, real_samples, fake_samples):
+
+        if self.channels == 1:
+            real_samples, fake_samples = map(lambda t: repeat(t, 'b 1 ... -> b c ...', c = 3), (real_samples, fake_samples))
+
+        min_batch = min(real_samples.shape[0], fake_samples.shape[0])
+        real_samples, fake_samples = map(lambda t: t[:min_batch], (real_samples, fake_samples))
+
+        m1, s1 = self.calculate_activation_statistics(real_samples)
+        m2, s2 = self.calculate_activation_statistics(fake_samples)
+
+        fid_value = calculate_frechet_distance(m1, s1, m2, s2)
+        return fid_value
 
     def train(self):
-        loss_history = []
         with tqdm(initial=self.step, total=self.train_num_steps) as pbar:
             while self.step < self.train_num_steps:
                 total_loss = 0.0
@@ -81,16 +103,7 @@ class Trainer:
                 self.step += 1
                 pbar.update(1)
                 
-                loss_history.append(loss)
-                if self.display and self.step % self.upset_step == 0:
-                    clear_output(True)
-                    plt.figure(figsize=(16, 9))
-                    plt.subplot(1, 1, 1)
-                    plt.title("LOSS")
-                    plt.plot(epoch_loss_history)
-                    plt.grid()
 
-                    plt.show()
                 
     print("training complete")
 

@@ -84,8 +84,6 @@ class Trainer:
         return fid_value
 
     def train(self):
-        loss_history = []
-        fid_history = []
         with tqdm(initial=self.step, total=self.train_num_steps) as pbar:
             while self.step < self.train_num_steps:
                 total_loss = 0.0
@@ -105,25 +103,7 @@ class Trainer:
                 self.step += 1
                 pbar.update(1)
                 
-                all_images = self.model.sapmle(batch_size = data.shape[0])
-                fid_score = self.fid_score(real_samples = data, fake_samples = all_images)
-                
-                fid_history.append(fid_score)
-                loss_history.append(loss)
-                if self.display and self.step % self.upset_step == 0:
-                    clear_output(True)
-                    plt.figure(figsize=(16, 9))
-                    plt.subplot(1, 2, 1)
-                    plt.title("LOSS")
-                    plt.plot(epoch_loss_history)
-                    plt.grid()
-                    
-                    plt.subplot(1, 2, 2)
-                    plt.title("FID SCORE")
-                    plt.plot(fid_history)
-                    plt.grid()
 
-                    plt.show()
                 
     print("training complete")
 
