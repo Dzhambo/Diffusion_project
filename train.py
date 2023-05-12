@@ -38,11 +38,12 @@ class Trainer:
         self,
         diffusion_model,
         dataloader,
-        *,
+        device,
+        display=True,
         train_lr=1e-4,
         train_num_steps=100000,
         adam_betas=(0.9, 0.99),
-        device,
+        upset_step=1000,
     ):
         self.model = diffusion_model
         self.channels = diffusion_model.channels
@@ -55,8 +56,36 @@ class Trainer:
         self.opt = Adam(diffusion_model.parameters(), lr=train_lr, betas=adam_betas)
 
         self.step = 0
+        
+        self.display = display
+        self.upset_step = upset_step
+        
+    @torch.no_grad()
+    def calculate_activation_statistics(self, samples):
+        features = self.inception_v3(samples)[0]
+        features = rearrange(features, '... 1 1 -> ...').cpu().numpy()
+
+        mu = np.mean(features, axis = 0)
+        sigma = np.cov(features, rowvar = False)
+        return mu, sigma
+
+    def fid_score(self, real_samples, fake_samples):
+
+        if self.channels == 1:
+            real_samples, fake_samples = map(lambda t: repeat(t, 'b 1 ... -> b c ...', c = 3), (real_samples, fake_samples))
+
+        min_batch = min(real_samples.shape[0], fake_samples.shape[0])
+        real_samples, fake_samples = map(lambda t: t[:min_batch], (real_samples, fake_samples))
+
+        m1, s1 = self.calculate_activation_statistics(real_samples)
+        m2, s2 = self.calculate_activation_statistics(fake_samples)
+
+        fid_value = calculate_frechet_distance(m1, s1, m2, s2)
+        return fid_value
 
     def train(self):
+        loss_history = []
+        fid_history = []
         with tqdm(initial=self.step, total=self.train_num_steps) as pbar:
             while self.step < self.train_num_steps:
                 total_loss = 0.0
@@ -75,7 +104,27 @@ class Trainer:
 
                 self.step += 1
                 pbar.update(1)
+                
+                all_images = self.model.sapmle(batch_size = data.shape[0])
+                fid_score = self.fid_score(real_samples = data, fake_samples = all_images)
+                
+                fid_history.append(fid_score)
+                loss_history.append(loss)
+                if self.display and self.step % self.upset_step == 0:
+                    clear_output(True)
+                    plt.figure(figsize=(16, 9))
+                    plt.subplot(1, 2, 1)
+                    plt.title("LOSS")
+                    plt.plot(epoch_loss_history)
+                    plt.grid()
+                    
+                    plt.subplot(1, 2, 2)
+                    plt.title("FID SCORE")
+                    plt.plot(fid_history)
+                    plt.grid()
 
+                    plt.show()
+                
     print("training complete")
 
 

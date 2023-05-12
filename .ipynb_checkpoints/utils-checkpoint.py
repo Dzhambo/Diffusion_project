@@ -27,7 +27,7 @@ def show_images(images, cmap="gray", title=""):
     fig.suptitle(title, fontsize=30)
     plt.show()
 
-def show_tensor_images(images):
+def show_tensor_images(images, idx=0):
     reverse_transform = transforms.Compose([
         transforms.Lambda(lambda t: (t + 1) / 2),
         transforms.Lambda(lambda t: t.permute(1, 2, 0)),
@@ -36,7 +36,7 @@ def show_tensor_images(images):
         transforms.ToPILImage(),
     ])
     if len(images.shape) == 4:
-        image = images[2, :, :, :].detach().cpu()
+        image = images[idx, :, :, :].detach().cpu()
     
     plt.imshow(reverse_transform(image))
 

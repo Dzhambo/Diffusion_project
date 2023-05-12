@@ -38,11 +38,12 @@ class Trainer:
         self,
         diffusion_model,
         dataloader,
-        *,
+        device,
+        display=True,
         train_lr=1e-4,
         train_num_steps=100000,
         adam_betas=(0.9, 0.99),
-        device,
+        upset_step=1000,
     ):
         self.model = diffusion_model
         self.channels = diffusion_model.channels
@@ -55,8 +56,12 @@ class Trainer:
         self.opt = Adam(diffusion_model.parameters(), lr=train_lr, betas=adam_betas)
 
         self.step = 0
+        
+        self.display = display
+        self.upset_step = upset_step
 
     def train(self):
+        loss_history = []
         with tqdm(initial=self.step, total=self.train_num_steps) as pbar:
             while self.step < self.train_num_steps:
                 total_loss = 0.0
@@ -75,7 +80,18 @@ class Trainer:
 
                 self.step += 1
                 pbar.update(1)
+                
+                loss_history.append(loss)
+                if self.display and self.step % self.upset_step == 0:
+                    clear_output(True)
+                    plt.figure(figsize=(16, 9))
+                    plt.subplot(1, 1, 1)
+                    plt.title("LOSS")
+                    plt.plot(epoch_loss_history)
+                    plt.grid()
 
+                    plt.show()
+                
     print("training complete")
 
 
