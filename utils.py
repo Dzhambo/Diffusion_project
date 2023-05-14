@@ -87,7 +87,7 @@ def calculate_metrics(generated_image, real_image, device):
     inc_score, _ = inception_score(
         generated_image, device=device, resize=True, splits=10
     )
-    fid_score_value = fid_score(generated_image, real_image)
+    fid_score_value = fid_score(generated_image, real_image, device)
     return inc_score, fid_score_value
 
 def plot_metrics_iddpm(generated_images, real_images, device, n_timestamps=250, batch_size=100):

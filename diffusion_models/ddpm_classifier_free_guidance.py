@@ -505,9 +505,6 @@ class GaussianDiffusion(nn.Module):
         min_snr_gamma=5,
     ):
         super().__init__()
-        assert not (type(self) == GaussianDiffusion and model.channels != model.out_dim)
-        assert not model.random_or_learned_sinusoidal_cond
-
         self.model = model
         self.channels = self.model.channels
 
@@ -515,11 +512,6 @@ class GaussianDiffusion(nn.Module):
 
         self.objective = objective
 
-        assert objective in {
-            "pred_noise",
-            "pred_x0",
-            "pred_v",
-        }, "objective must be either pred_noise (predict noise) or pred_x0 (predict image start) or pred_v (predict v [v-parameterization as defined in appendix D of progressive distillation paper, used in imagen-video successfully])"
 
         if beta_schedule == "linear":
             betas = linear_beta_schedule(timesteps)

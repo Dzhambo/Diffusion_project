@@ -102,6 +102,26 @@ class Trainer:
 
                 self.step += 1
                 pbar.update(1)
+    
+    def train_guidance_free(self):
+        with tqdm(initial=self.step, total=self.train_num_steps) as pbar:
+            while self.step < self.train_num_steps:
+                total_loss = 0.0
+                
+                data, labels = next(iter(self.dl))[0].to(self.device), next(iter(self.dl))[1].to(self.device)
+
+                loss = self.model(data, classes = labels)
+                total_loss += loss.item()
+                loss.backward()
+
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                pbar.set_description(f"loss: {total_loss:.4f}")
+
+                self.opt.step()
+                self.opt.zero_grad()
+
+                self.step += 1
+                pbar.update(1)
                 
 
                 
