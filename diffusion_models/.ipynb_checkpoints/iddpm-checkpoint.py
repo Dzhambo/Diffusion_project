@@ -247,7 +247,6 @@ class GaussianDiffusion(torch.nn.Module):
     def condition_mean(self, cond_fn, mean, variance, x, t, guidance_kwargs=None):
         gradient = cond_fn(x, t, **guidance_kwargs)
         new_mean = mean.float() + variance * gradient.float()
-        print("gradient: ", (variance * gradient.float()).mean())
         return new_mean
 
     @torch.no_grad()
@@ -458,10 +457,10 @@ class GaussianDiffusion(torch.nn.Module):
 
 
 class Classifier(torch.nn.Module):
-    def __init__(self, image_size, num_classes, t_dim=1) -> None:
+    def __init__(self, image_size, num_classes, n_channels=3, t_dim=1) -> None:
         super().__init__()
         self.linear_t = torch.nn.Linear(t_dim, num_classes)
-        self.linear_img = torch.nn.Linear(image_size * image_size * 3, num_classes)
+        self.linear_img = torch.nn.Linear(image_size * image_size * n_channels, num_classes)
 
     def forward(self, x, t):
         B = x.shape[0]

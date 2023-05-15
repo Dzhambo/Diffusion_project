@@ -1,3 +1,5 @@
 datasets
 model_weights
 __pycache__
+.ipynb_checkpoints
+__pycache__
