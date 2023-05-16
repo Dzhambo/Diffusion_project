@@ -1,7 +1,7 @@
 # Diffusion_project
 
 
-## Задачи данного проекты:
+## Краткое описание проекта:
 
 * **Datasets - MNIST, CIFAR10**
 
